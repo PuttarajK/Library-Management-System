@@ -58,7 +58,7 @@ class Book {
 		}
 
 		static Book fromCSV(const vector<string> &t) {
-			return Book(stoi(t[0]), t[1], t[2], stoi([3]), stoi(t[4]));
+			return Book(stoi(t[0]), t[1], t[2], stoi(t[3]), stoi(t[4]));
 		}
 
 		void display() const {
@@ -139,13 +139,13 @@ public:
 	}
 
 	void loadMembers() {
-		if stream fin(MEMBERS_FILE);
+		ifstream fin(MEMBERS_FILE);
 		string line;
 		while (getline(fin, line)) {
 			if (line.empty()) continue;
 			Member m = Member::fromCSV(splitCSV(line));
 			members.push_back(m);
-			nextMemberId = max(nextMemberId, m.Id + 1);
+			nextMemberId = max(nextMemberId, m.id + 1);
 		}
 	}
 
@@ -154,7 +154,7 @@ public:
 		string line;
 		while(getline(fin, line)) {
 			if (line.empty()) continue;
-			transactions.push_back(Transaction::fromCSV(splitCSV(line)));
+			transaction.push_back(Transaction::fromCSV(splitCSV(line)));
 		}
 	}
 
@@ -170,7 +170,7 @@ public:
 
 	void saveTransactions() {
 		ofstream fout(TRANSACTIONS_FILE);
-		for(auto &t:transactions) fout << t.toCSV() << "\n";
+		for(auto &t:transaction) fout << t.toCSV() << "\n";
 	}
 	
 	void addBook() {
@@ -206,7 +206,7 @@ public:
 		cout << "Enter Member Email:";
 		getline(cin, email);
 
-		Member m(nextMemberID++, name , email);
+		Member m(nextMemberId++, name , email);
 		members.push_back(m);
 		saveMembers();
 		cout << "Member added successfully! (Member ID:" << m.id << ")\n";
@@ -216,6 +216,10 @@ public:
 		if (members.empty()) {cout << "No members registered.\n"; return;}
 		cout << "\n" << left << setw(5) << "ID" << setw(20) << "Name" << setw(30) << "Email" << "\n";
 		cout << string(55, '-') << "\n";
+		for (auto &m:members) m.display();
+	}
+
+	Member*findMemberById(int id) {
 		for (auto &m:members) if (m.id == id) return &m;
 			return nullptr;
 	}
@@ -241,16 +245,16 @@ public:
 		}
 
 		book->availableCopies--;
-		transactions.push_back(Transaction(bookId, memberId, "ISSUED"));
+		transaction.push_back(Transaction(bookId, memberId, "ISSUED"));
 		saveBooks();
 		saveTransactions();
 
 		cout << "Book\""<< book->title <<"\"issued to " << member->name << "successfully.\n";
 	}
 
-	void retunBook() {
+	void returnBook() {
 		int bookId = readInt("Enter Book ID to return:");
-		int memberId = readint("Enter Member ID:");
+		int memberId = readInt("Enter Member ID:");
 
 		Book*book = findBookById(bookId);
 		Member*member = findMemberById(memberId);
@@ -258,8 +262,8 @@ public:
 		if(!book) {cout << "Book ID not found.\n"; return; }
 		if(!member) {cout << "member ID not found.\n"; return;}
 
-		for (int i=(int)transactions.size()-1;i>=0;--i) {
-			Transaction &t = transactions[i];
+		for (int i=(int)transaction.size()-1;i>=0;--i) {
+			Transaction &t = transaction[i];
 			if(t.bookId == bookId && t.memberId == memberId && t.status == "ISSUED") {
 				t.status = "RETURNED";
 				book->availableCopies++;
@@ -275,7 +279,7 @@ public:
 		bool any = false;
 		cout << "\n" << left << setw(10) << "BookID" << setw(12) << "MemeberID" << setw(10) << "Status" << "\n";
 		cout << string(32, '-') << "\n";
-		for (auto &t:transactions) {
+		for (auto &t:transaction) {
 			if(t.status == "ISSUED") {
 				cout << left << setw(10) << t.bookId << setw(12) << t.memberId << setw(10) << t.status << "\n";
 				any = true;
@@ -357,7 +361,7 @@ int main() {
 
 		switch (choice) {
 		case 1:library.addBook(); break;
-		case 2:library.displayAllBook(); break;
+		case 2:library.displayAllBooks(); break;
 		case 3:library.addMember(); break;
 		case 4:library.displayAllMembers(); break;
 		case 5:library.issueBook(); break;
